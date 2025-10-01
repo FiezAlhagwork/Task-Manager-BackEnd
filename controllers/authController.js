@@ -118,16 +118,16 @@ const loginUser = async (req, res) => {
 //@access private
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findOne(req.user._id).select("-password")
-    if(!user){
-      res.status(404).json({message:"User not Found", error:true})
+    const user = await User.findOne(req.user._id).select("-password");
+    if (!user) {
+      res.status(404).json({ message: "User not Found", error: true });
     }
 
     res.status(200).json({
-      message:"User profile fetched successfully.",
+      message: "User profile fetched successfully.",
       user,
-      error:false
-    })
+      error: false,
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error.", error: error.message });
   }
@@ -136,6 +136,37 @@ const getUserProfile = async (req, res) => {
 //@desc Update user profile
 //@route PUT /api/auth/profile
 //@access private
-const updateUserProfile = async () => {};
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) {
+      res.status(404).json({ message: "User not Found", error: true });
+    }
+
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+
+    if (req.body.password) {
+      const salt = await bcrypt.getSalt(10);
+      user.password = await bcrypt.hash(req.body.password, salt);
+    }
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      message: "User profile updated successfully.",
+      user: {
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+      },
+      error: false,
+      token: generateToken(updatedUser._id),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
 
 module.exports = { registerUser, loginUser, getUserProfile, updateUserProfile };
