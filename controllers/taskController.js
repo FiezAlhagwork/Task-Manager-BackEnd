@@ -8,7 +8,6 @@ const getTasks = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
-  
 };
 //@desc  GET Task by ID
 //@route Get /api/tasks/
@@ -35,13 +34,27 @@ const createTask = async (req, res) => {
       todoChecklist,
     } = req.body;
 
-    if (!Array.isArray(assigneesTo)) {
-      return res
-        .status(400)
-        .json({
-          error: true,
-          message: "assigneesTo must be an array of user IDs",
-        });
+    if (!title || !description || !dueDate) {
+      return res.status(400).json({
+        error: true,
+        message:
+          "All fields (title, description,  dueDate) are required",
+      });
+    }
+
+    const validPriorities = ["Low", "Medium", "High"];
+    if (priority && !validPriorities.includes(priority)) {
+      return res.status(400).json({
+        error: true,
+        message: `Invalid priority value. Allowed values are: ${validPriorities.join(", ")}`,
+      });
+    }
+
+    if (!Array.isArray(assigneesTo) || assigneesTo.length === 0) {
+      return res.status(400).json({
+        error: true,
+        message: "assigneesTo must be an array of user IDs",
+      });
     }
 
     const task = await Task.create({
