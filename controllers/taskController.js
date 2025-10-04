@@ -5,10 +5,74 @@ const Task = require("../models/Task");
 //@access private
 const getTasks = async (req, res) => {
   try {
+    const { status } = req.query;
+
+    let filter = {};
+    if (status) {
+      filter.status = status;
+    }
+
+    let tasks;
+
+    if (req.user.role == "admin") {
+      tasks = await Task.find(filter).populate(
+        "assigneesTo",
+        "name email profileImageUrl "
+      );
+    } else {
+      tasks = await Task.find({
+        ...filter,
+        assigneesTo: req.user._id,
+      }).populate("assigneesTo", "name email profileImageUrl ");
+    }
+
+    tasks = await Promise.all(
+      tasks.map(async (task) => {
+        const completedCount = task.todoChecklist.filter(
+          (item) => item.completed
+        ).length;
+        return { ...task.toObject(), completedTodoCount: completedCount };
+      })
+    );
+
+    const allTasks = await Task.countDocuments(
+      req.user.role === "admin" ? {} : { assigneesTo: req.user._id }
+    );
+
+    const pendingTask = await Task.countDocuments({
+      ...filter,
+      status: "Pending",
+      ...(req.user.role !== "admin" && { assigneesTo: req.user._id }),
+    });
+
+    const InProgressTasks = await Task.countDocuments({
+      ...filter,
+      status: "In Progress",
+      ...(req.user.role !== "admin" && { assigneesTo: req.user._id }),
+    });
+
+    const completedTasks = await Task.countDocuments({
+      ...filter,
+      status: "Completed",
+      ...(req.user.role !== "admin" && { assigneesTo: req.user._id }),
+    });
+
+    res.status(200).json({
+      message: "Tasks fetched successfully",
+      tasks,
+      statusSummary: {
+        all: allTasks,
+        pendingTask,
+        InProgressTasks,
+        completedTasks,
+      },
+      error: false,
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 //@desc  GET Task by ID
 //@route Get /api/tasks/
 //@access private
@@ -37,8 +101,7 @@ const createTask = async (req, res) => {
     if (!title || !description || !dueDate) {
       return res.status(400).json({
         error: true,
-        message:
-          "All fields (title, description,  dueDate) are required",
+        message: "All fields (title, description,  dueDate) are required",
       });
     }
 
@@ -46,7 +109,9 @@ const createTask = async (req, res) => {
     if (priority && !validPriorities.includes(priority)) {
       return res.status(400).json({
         error: true,
-        message: `Invalid priority value. Allowed values are: ${validPriorities.join(", ")}`,
+        message: `Invalid priority value. Allowed values are: ${validPriorities.join(
+          ", "
+        )}`,
       });
     }
 
