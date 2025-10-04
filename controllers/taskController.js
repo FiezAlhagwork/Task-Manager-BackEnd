@@ -78,6 +78,16 @@ const getTasks = async (req, res) => {
 //@access private
 const getTasksById = async (req, res) => {
   try {
+    const task = await Task.findById(req.params.id).populate(
+      "assigneesTo",
+      "name email profileImageUrl "
+    );
+    if (!task) {
+      return res.status(404).json({ message: "Task not found", error: true });
+    }
+    res
+      .status(200)
+      .json({ message: "Task fetched successfully", task, error: false });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
