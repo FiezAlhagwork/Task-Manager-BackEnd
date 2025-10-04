@@ -7,6 +7,7 @@ const app = express();
 
 const authRoutes = require("./routes/authRoutes")
 const userRoutes  = require("./routes/userRoutes")
+const taskRoutes = require("./routes/taskRoutes")
 //Middleware to handle CORS
 app.use(
   cors({
@@ -15,6 +16,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
 //Connect DataBase
 connectDB();
@@ -25,7 +27,7 @@ app.use(express.json());
 // Route
 app.use("/api/auth", authRoutes)
 app.use("/api/users",userRoutes)
-// app.use("/api/task",taskRoutes)
+app.use("/api/task",taskRoutes)
 // app.use("/api/report", reportRoutes)
 
 //Start Server
