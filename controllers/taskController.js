@@ -203,7 +203,17 @@ const updateTask = async (req, res) => {
 //@access Private (Admin )
 const deleteTask = async (req, res) => {
   try {
-      const task
+    const {id} = req.params
+    const task = await Task.findByIdAndDelete(id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found", error: true });
+    }
+
+    res.status(200).json({
+      message:"Task deleted successfully",
+      deleteTaskId:id
+    })
+    res
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
