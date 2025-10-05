@@ -155,6 +155,44 @@ const createTask = async (req, res) => {
 //@access Private
 const updateTask = async (req, res) => {
   try {
+    const taskId = req.params.id;
+    const {
+      title,
+      description,
+      priority,
+      dueDate,
+      assigneesTo,
+      attachments,
+      todoChecklist,
+    } = req.body;
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found", error: true });
+    }
+
+    task.title = title || task.title;
+    task.description = description || task.description;
+    task.priority = priority || task.priority;
+    task.dueDate = dueDate || task.dueDate;
+    task.attachments = attachments || task.attachments;
+    task.todoChecklist = todoChecklist || task.todoChecklist;
+
+    if (req.body.assigneesTo) {
+      if (!Array.isArray(assigneesTo)) {
+        return res.status(400).json({
+          message: "assigneesTo must be an array of user IDs",
+          error: true,
+        });
+      }
+      task.assigneesTo = req.body.assigneesTo;
+    }
+
+    const updateTask = await task.save();
+
+    res
+      .status(200)
+      .json({ message: "Task updated successfully", updateTask, error: false });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -165,6 +203,7 @@ const updateTask = async (req, res) => {
 //@access Private (Admin )
 const deleteTask = async (req, res) => {
   try {
+      const task
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
