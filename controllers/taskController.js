@@ -6,7 +6,6 @@ const Task = require("../models/Task");
 const getTasks = async (req, res) => {
   try {
     const { status } = req.query;
-
     let filter = {};
     if (status) {
       filter.status = status;
