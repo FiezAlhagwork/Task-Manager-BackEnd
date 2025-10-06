@@ -203,17 +203,17 @@ const updateTask = async (req, res) => {
 //@access Private (Admin )
 const deleteTask = async (req, res) => {
   try {
-    const {id} = req.params
+    const { id } = req.params;
     const task = await Task.findByIdAndDelete(id);
     if (!task) {
       return res.status(404).json({ message: "Task not found", error: true });
     }
 
     res.status(200).json({
-      message:"Task deleted successfully",
-      deleteTaskId:id
-    })
-    res
+      message: "Task deleted successfully",
+      deleteTaskId: id,
+    });
+    res;
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -224,6 +224,30 @@ const deleteTask = async (req, res) => {
 //@access Private
 const updateTaskStatus = async (req, res) => {
   try {
+    const task = await Task.findById(req.params.id);
+    if (!task)
+      return res.status(404).json({ message: "Task not Found", error: false });
+
+    const isAssigned = task.assigneesTo.some(
+      (userId) => userId.toString() === req.user._id.toString()
+    )
+
+    if(!isAssigned  && req.user.role !== "admin") {
+      return res,status(403).json({message:"Not authorized"})
+    }
+
+
+    task.status = req.body.status || task.status
+
+
+    if(task.status === "Completed") {
+      task.todoChecklist.map((item) => {item.completed = true})
+      task.progress = 100
+    }
+
+    await task.save()
+
+    res.status(200).json({message:"Task status updated", task , error:false})
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
